@@ -2,15 +2,15 @@ import pandas as pd
 import numpy as np
 
 class Track:
-	def __init__(self):
-		self.data = pd.read_csv('data/track_data.csv')
-		self._parse_track_data()
+	def __init__(self, file_path):
+		self.data = pd.read_csv('data/silverstone.csv')
+		self.parse_track_data()
 
 
 	def parse_track_data(self):
 		self.x_coord = self.data['x_m'].values
 		self.y_coord = self.data['y_m'].values
-		self.w_right = self.data['w_tr_right_m,'].values
+		self.w_right = self.data['w_tr_right_m'].values
 		self.w_left = self.data['w_tr_left_m'].values
 
 		self.centerline = np.column_stack((self.x_coord, self.y_coord))
