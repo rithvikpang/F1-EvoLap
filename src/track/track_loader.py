@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 class Track:
-	def __init__(self, file_path):
+	def __init__(self):
 		self.data = pd.read_csv('data/silverstone.csv')
 		self.parse_track_data()
 
