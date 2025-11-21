@@ -4,7 +4,7 @@ from scipy.interpolate import CubicSpline
 
 class Track:
 	def __init__(self, file_path):
-		self.data = pd.read_csv('../data/silverstone.csv')
+		self.data = pd.read_csv('./data/silverstone.csv')
 		self.parse_track_data()
 		self.smooth_track()
 		self.compute_curvature()
