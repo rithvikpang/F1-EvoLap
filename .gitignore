@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 venv/
 __pycache__/
 *.pyc
 .DS_Store
 .vscode/settings.json
-=======
 /env
->>>>>>> 803bccd23d71338588d7cb48b690cff5b14bbbfb
