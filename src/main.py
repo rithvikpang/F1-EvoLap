@@ -1,27 +1,55 @@
+"""Main script to run lap simulation on a racing track using a vehicle model."""
+
+import logging
 from track.track_loader import Track
-from track.track_visualizer import plot_track, plot_curvature
+from track.track_visualizer import plot_track
 from physics.vehicle_model import VehicleModel
-# from physics.lap_simulator import simulate_lap
-import numpy as np
+from physics.lap_simulator import LapSimulator
+from visualization.visualize_results import plot_lap_simulation_results
+
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 def main():
-    track = Track("../data/silverstone.csv")
+    logger.info("Loading Silverstone track...")
+    track = Track("data/silverstone.csv")
 
-    print("Track width stats:")
-    print("Min:", track.track_width.min())
-    print("Max:", track.track_width.max())
-    print("Mean:", track.track_width.mean())
-
-    plot_track(track)
-    plot_curvature(track)
-
-    # Create vehicle and simulate lap
+    logger.info("\nTrack width stats:")
+    logger.info(f"  Min: {track.track_width.min():.2f} m")
+    logger.info(f"  Max: {track.track_width.max():.2f} m")
+    logger.info(f"  Mean: {track.track_width.mean():.2f} m")
+    
+    racing_line = track.get_centerline()
+    logger.info(f"\nRacing line points: {len(racing_line)}")
+    
+    # Quick track preview
+    logger.info("\nShowing track layout...")
+    plot_track(track, trajectory=racing_line)
+    
+    # Create vehicle with default parameters
+    logger.info("\nCreating vehicle model...")
     vehicle_params = {}
-    car = VehicleModel(vehicle_params)
-    # trajectory = simulate_lap(car, track)
-
-    # Plot simulated trajectory
-    # plot_track(track, trajectory)
+    vehicle = VehicleModel(vehicle_params)
+    
+    logger.info("\n" + "="*60)
+    logger.info("RUNNING LAP SIMULATION")
+    logger.info("="*60)
+    
+    sim = LapSimulator(vehicle, racing_line)
+    lap_time, times = sim.simulate()
+    
+    logger.info("\n" + "="*60)
+    logger.info(f"LAP TIME: {lap_time:.3f} seconds ({lap_time/60:.3f} minutes)")
+    logger.info("="*60)
+    
+    logger.info(f"\nSpeed statistics:")
+    logger.info(f"  Max speed: {sim.v_final.max() * 3.6:.1f} km/h")
+    logger.info(f"  Min speed: {sim.v_final.min() * 3.6:.1f} km/h")
+    logger.info(f"  Average speed: {sim.v_final.mean() * 3.6:.1f} km/h")
+    
+    # Physics analysis
+    logger.info("\nGenerating comprehensive visualization...")
+    plot_lap_simulation_results(sim, track, racing_line)
 
 if __name__ == "__main__":
     main()

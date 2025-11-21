@@ -1,3 +1,5 @@
+"""Module for visualizing the racing track and optimal trajectory."""
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -6,6 +8,7 @@ def plot_track(track, trajectory=None):
 
     plt.plot(track.x_left, track.y_left, 'g-', label="Left Boundary")
     plt.plot(track.x_right, track.y_right, 'b-', label="Right Boundary")
+
     plt.plot(track.x_center, track.y_center, 'k--', label="Centerline")
     
     if trajectory is not None:

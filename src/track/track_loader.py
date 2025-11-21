@@ -1,3 +1,5 @@
+"""Module for loading and parsing racing track data from CSV files."""
+
 import pandas as pd
 import numpy as np
 from scipy.interpolate import CubicSpline
