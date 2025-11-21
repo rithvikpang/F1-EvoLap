@@ -1,3 +1,4 @@
+"""Module defining the vehicle model and its physical properties."""
 import math
 import numpy as np
 
