@@ -8,7 +8,7 @@ class VehicleModel:
         
         # mass of car in kg (SHOULD NOT BE EVOLVED)
         self.mass = 795
-        self.fuel_mass = params.get("fuel_mass", 30)
+        self.fuel_mass = params.get("fuel_mass", 7)
         self.air_density = 1.225
         self.wheel_radius = 0.33
         self.g = 9.81
