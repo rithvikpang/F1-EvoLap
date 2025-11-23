@@ -5,6 +5,8 @@ from track.track_loader import Track
 from track.track_visualizer import plot_track
 from physics.vehicle_model import VehicleModel
 from physics.lap_simulator import LapSimulator
+from trajectory.trajectory_builder import TrajectoryBuilder
+import numpy as np
 from visualization.visualize_results import plot_lap_simulation_results
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -19,12 +21,16 @@ def main():
     logger.info(f"  Max: {track.track_width.max():.2f} m")
     logger.info(f"  Mean: {track.track_width.mean():.2f} m")
     
-    racing_line = track.get_centerline()
-    logger.info(f"\nRacing line points: {len(racing_line)}")
+    centerline = track.get_centerline()
+    logger.info(f"\nRacing line points: {len(centerline)}")
     
     # Quick track preview
     logger.info("\nShowing track layout...")
-    plot_track(track, trajectory=racing_line)
+    offsets = np.zeros(len(centerline))
+    builder = TrajectoryBuilder(sample_count=2000)
+    trajectory = builder.build_trajectory(centerline, offsets)
+
+    plot_track(track, trajectory=trajectory)
     
     # Create vehicle with default parameters
     logger.info("\nCreating vehicle model...")
@@ -35,7 +41,7 @@ def main():
     logger.info("RUNNING LAP SIMULATION")
     logger.info("="*60)
     
-    sim = LapSimulator(vehicle, racing_line)
+    sim = LapSimulator(vehicle, trajectory)
     lap_time, times = sim.simulate()
     
     logger.info("\n" + "="*60)
@@ -49,7 +55,7 @@ def main():
     
     # Physics analysis
     logger.info("\nGenerating comprehensive visualization...")
-    plot_lap_simulation_results(sim, track, racing_line)
+    plot_lap_simulation_results(sim, track, trajectory)
 
 if __name__ == "__main__":
     main()
