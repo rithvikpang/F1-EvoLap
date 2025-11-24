@@ -41,68 +41,6 @@ def build_vehicle(vec):
         params[name] = float(vec[i])
     return VehicleModel(params)
 
-# def control_to_trajectory(track, ctrl_vec):
-#     """
-#     Convert N control parameters into a lateral displacement curve.
-#     Same logic you used inside fitness_function.evaluate_trajectory().
-#     """
-#     n = len(ctrl_vec)
-#     s = np.linspace(0, 1, n)
-#     fine_s = np.linspace(0, 1, len(track.x_center))
-
-#     # Cubic interpolation of control points
-#     import scipy.interpolate as si
-#     cubic = si.interp1d(s, ctrl_vec, kind="cubic", fill_value="extrapolate")
-#     # disp = cubic(fine_s)
-#     n_full = len(track.x_center)
-#     disp = np.interp(
-#         np.linspace(0, len(ctrl_vec) - 1, n_full / 2.0),
-#         np.arange(len(ctrl_vec)),
-#         ctrl_vec
-#     )
-
-#     # clamp displacement to track half-width
-#     half_w = track.track_width / 2.0
-#     disp = np.clip(disp, -half_w, half_w)
-
-#     # build trajectory coordinates
-#     x = track.x_center - disp * track.ny
-#     y = track.y_center + disp * track.nx
-
-#     return np.vstack([x, y]).T
-
-# def control_to_trajectory(track, ctrl_vec):
-#     """
-#     Convert a low-dimensional control vector into a full-resolution trajectory.
-#     This ensures disp, half_w, centerline_x/y all have matching lengths.
-#     """
-
-#     # Number of full-resolution samples used by track (≈ 11780)
-#     n_full = len(track.x_center)
-
-#     # Upsample control vector to full resolution
-#     # This fixes the broadcasting error
-#     disp = np.interp(
-#         np.linspace(0, len(ctrl_vec) - 1, n_full / 2.0),
-#         np.arange(len(ctrl_vec)),
-#         ctrl_vec
-#     )
-
-#     # Track half-width (already length n_full)
-#     half_w = track.track_width / 2.0
-
-#     # Clamp displacement to track boundaries
-#     disp = np.clip(disp, -half_w, half_w)
-
-#     # Compute final racing line
-#     theta = track.centerline_heading
-#     traj_x = track.x_center + disp * np.cos(theta + np.pi / 2)
-#     traj_y = track.y_center + disp * np.sin(theta + np.pi / 2)
-
-#     return traj_x, traj_y, disp
-
-
-
 # ------------------------------
 # Fitness function
 # ------------------------------
@@ -128,20 +66,6 @@ def evaluate_individual(ind, track, n_control, penalty_weights):
         fit = 1e6
     
     return (float(fit),)
-    # # Run simulator
-    # lap = LapSimulator(vehicle, traj)
-    # # if lap["offtrack"]:
-    # #     return (1e6,)  # big penalty
-
-    # lap_time, _ = lap.simulate()
-    # smooth_pen = lap["smoothness_penalty"]
-
-    # total = lap_time \
-    #         + penalty_weights["offtrack"] * lap["offtrack_dist"] \
-    #         + penalty_weights["smoothness"] * smooth_pen
-
-    # return (total,)
-
 
 # ------------------------------
 # GA main function
@@ -232,7 +156,8 @@ def joint_optimize(track,
             ind.fitness.values = fit
 
         best = min(population, key=lambda x: x.fitness.values[0])
-        print(f"[Joint GA] Gen {gen}/{n_gens} best fitness = {best.fitness.values[0]:.3f}")
+        if verbose and (gen % 5 == 0 or gen == n_gens):
+            print(f"[GA] Gen {gen}/{n_gens} best fitness = {best.fitness.values[0]:.3f}")
 
         # select + clone
         offspring = toolbox.select(population, len(population))
