@@ -167,21 +167,30 @@ class LapSimulator:
         
         return lap_time, times
     
+    def __call__(self, vehicle=None, racing_line=None):
+        if vehicle is not None:
+            self.vehicle = vehicle
+        if racing_line is not None:
+            self.racing_line = racing_line
+            self.n_points = len(racing_line)
+            self.calculate_geometry()
+        return self.simulate()
+
     def simulate(self):
         """Run the full lap simulation"""
-        logger.info("Calculating cornering speed limits...")
+        #  logger.info("Calculating cornering speed limits...")
         self.calculate_cornering_speed_limit()
         
-        logger.info("Running forward pass (acceleration)...")
+        # logger.info("Running forward pass (acceleration)...")
         self.forward_pass()
         
-        logger.info("Running backward pass (braking)...")
+        # logger.info("Running backward pass (braking)...")
         self.backward_pass()
         
-        logger.info("Combining speed limits...")
+        # logger.info("Combining speed limits...")
         self.combine_limits()
         
-        logger.info("Calculating lap time...")
+        # logger.info("Calculating lap time...")
         lap_time, times = self.calculate_lap_time()
         
         return lap_time, times

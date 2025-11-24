@@ -6,7 +6,7 @@ from scipy.interpolate import CubicSpline
 
 class Track:
 	def __init__(self, file_path):
-		self.data = pd.read_csv('./data/silverstone.csv')
+		self.data = pd.read_csv('../data/silverstone.csv')
 		self.parse_track_data()
 		self.smooth_track()
 		self.compute_curvature()
@@ -57,7 +57,7 @@ class Track:
 		self.centerline = np.column_stack((self.x_center, self.y_center))
 	
 	def compute_curvature(self):
-        # Curvature k = (x'y'' - y'x'') / (x'^2 + y'^2)^(3/2)
+		# Curvature k = (x'y'' - y'x'') / (x'^2 + y'^2)^(3/2)
 		dx = np.gradient(self.x_center)
 		dy = np.gradient(self.y_center)
 		ddx = np.gradient(dx)

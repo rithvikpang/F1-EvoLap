@@ -7,7 +7,7 @@ class VehicleModel:
     def __init__(self, params):
         
         # mass of car in kg (SHOULD NOT BE EVOLVED)
-        self.mass = 795
+        self.mass = 795 # min 798??
         self.fuel_mass = params.get("fuel_mass", 7)
         self.air_density = 1.225
         self.wheel_radius = 0.33
@@ -19,8 +19,8 @@ class VehicleModel:
         self.weight_dist_rear = 0.55
 
         # aerodynamics (ALL EVOLVABLE)
-        self.CD = params.get("CD", 0.85) # drag coefficient
-        self.CL = params.get("CL", 3.5) # lift coefficient (negative for downforce)
+        self.CD = params.get("CD", 0.85) # drag coefficient (0.7-1.1)
+        self.CL = params.get("CL", 3.5) # lift coefficient (negative for downforce) (-1 to -2?)
         self.frontal_area = params.get("frontal_area", 1.5) # m^2
         self.aero_balance = params.get("aero_balance", 0.45) # percentage of downforce on front axle
         self.drag_mult = params.get("drag_mult", 1.0)
