@@ -122,7 +122,7 @@ def smoothness_penalty(path):
     ang_diff = (ang_diff + np.pi) % (2*np.pi) - np.pi
     return float(np.mean(ang_diff**2))
 
-def evaluate_trajectory(path, track, vehicle, lap_simulator, penalty_weights=None, debug=False):
+def evaluate_trajectory(path, track, vehicle, penalty_weights=None, debug=False):
     if penalty_weights is None:
         penalty_weights = {"offtrack": 100.0, "smoothness": 1.0}
 
@@ -133,8 +133,8 @@ def evaluate_trajectory(path, track, vehicle, lap_simulator, penalty_weights=Non
         vcopy = vehicle
 
     res = LapSimulator(vcopy, path)
-    time, _ = res.simulate() # or lap(vehicle, path) ??
-    print("TIME: ", time)
+    time, _ = res.simulate()
+    # print("TIME: ", time)
 
     # compute penalties
     off = offtrack_penalty(path, track)

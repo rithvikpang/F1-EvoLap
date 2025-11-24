@@ -74,7 +74,7 @@ def ga_optimize(track, vehicle, lap_simulator,
         offsets = np.array(ind, dtype=float)
         traj = Trajectory(centerline, n_control, offsets)
         path = traj.get_path()
-        res = evaluate_trajectory(path, track, vehicle, lap_simulator, penalty_weights=penalty_weights)
+        res = evaluate_trajectory(path, track, vehicle, penalty_weights=penalty_weights)
         fit = res.get("fitness", None)
         if fit is None or not np.isfinite(fit):
             fit = 1e6
