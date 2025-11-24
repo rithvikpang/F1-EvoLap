@@ -62,7 +62,7 @@ class VehicleModel:
         self.rolling_resistance = 0.015 # rolling resistance coefficient
         self.optimal_slip_angle = 6 # degrees
 
-        # Brakes
+        # Brakes (EVOLVABLE)
         self.front_brake_force = params.get("front_brake_force", 12_000)
         self.rear_brake_force = params.get("rear_brake_force", 10_000)
         self.brake_bias = params.get("brake_bias", 0.56)
