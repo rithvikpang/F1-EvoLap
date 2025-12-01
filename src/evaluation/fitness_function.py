@@ -3,77 +3,9 @@ from copy import deepcopy
 import math
 from physics.lap_simulator import LapSimulator
 
-def estimate_laptime_from_trajectory(traj, track, vehicle):
-    traj = np.asarray(traj)
-    if traj.ndim != 2 or traj.shape[1] != 2:
-        raise ValueError("trajectory must be Nx2")
-
-    # segment lengths
-    ds = np.linalg.norm(np.diff(traj, axis=0, append=[traj[0]]), axis=1)
-    total_len = ds.sum()
-
-    # get track centerline & curvature
-    if hasattr(track, 'get_centerline'):
-        center = track.get_centerline()
-    else:
-        center = np.column_stack((track.x_center, track.y_center))
-    if hasattr(track, 'get_curvature'):
-        curvature = track.get_curvature()
-    else:
-        # approximate curvature from centerline if not provided
-        dx = np.gradient(center[:,0])
-        dy = np.gradient(center[:,1])
-        ddx = np.gradient(dx)
-        ddy = np.gradient(dy)
-        curvature = (dx*ddy - dy*ddx) / (dx**2 + dy**2 + 1e-12)**1.5
-
-    # vehicle params
-    g = getattr(vehicle, 'g', 9.81)
-    mu = getattr(vehicle, 'mu', None)
-    max_speed = getattr(vehicle, 'max_speed', None) or getattr(vehicle, 'P_max', None)
-    # if P_max present but max_speed absent we'll clamp later
-
-    # nearest centerline index for each traj point
-    idxs = []
-    for p in traj:
-        idxs.append(int(np.argmin(np.linalg.norm(center - p, axis=1))))
-    idxs = np.array(idxs)
-
-    # compute v_target per segment using curvature at start point of segment
-    v_targets = np.zeros(len(ds))
-    for i in range(len(ds)):
-        idx = idxs[i]
-        k = curvature[idx] if idx < len(curvature) else curvature[-1]
-        if k == 0 or mu is None:
-            v_corner = max_speed if max_speed is not None else 20.0  # fallback
-        else:
-            R = abs(1.0 / k) if abs(k) > 1e-6 else 1e6
-            if mu is None:
-                mu_est = 1.0
-            else:
-                mu_est = mu
-            v_corner = math.sqrt(max(0.0, mu_est * g * R))
-        # safety factor and clamp
-        if max_speed is not None:
-            v_targets[i] = min(v_corner * 0.95, max_speed)
-        else:
-            v_targets[i] = v_corner * 0.95
-        # avoid zeros
-        if v_targets[i] < 0.5:
-            v_targets[i] = 0.5
-
-    # compute time
-    time = float(np.sum(ds / v_targets))
-    return time
-
 def offtrack_penalty(path, track):
     center = track.get_centerline() if hasattr(track, 'get_centerline') else np.column_stack((track.x_center, track.y_center))
-    widths = None
-    if hasattr(track, "get_track_width"):
-        try:
-            widths = track.get_track_width()
-        except Exception:
-            widths = None
+    widths = track.get_track_width()
 
     N_center = len(center)
     penalty = 0.0
@@ -134,7 +66,6 @@ def evaluate_trajectory(path, track, vehicle, penalty_weights=None, debug=False)
 
     res = LapSimulator(vcopy, path)
     time, _ = res.simulate()
-    # print("TIME: ", time)
 
     # compute penalties
     off = offtrack_penalty(path, track)

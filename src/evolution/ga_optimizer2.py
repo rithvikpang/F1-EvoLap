@@ -12,17 +12,72 @@ from evaluation.fitness_function import evaluate_trajectory
 # ------------------------------
 # Vehicle parameter ranges
 # ------------------------------
+# VEHICLE_PARAM_SPEC = [
+#     ("CD", 0.85, 0.40, 1.6),
+#     ("CL", 3.5, 0.50, 7.0),
+#     ("frontal_area", 1.5, 1.0, 2.2),
+#     ("downforce_mult", 1.0, 0.2, 1.6),
+#     ("drag_mult", 1.0, 0.6, 1.4),
+#     ("mu_base", 2.4, 1.2, 3.2),
+#     ("front_ride_height", 0.03, 0.0, 0.08),
+#     ("rear_ride_height", 0.05, 0.0, 0.12),
+#     ("antiroll_front", 60000, 20000, 120000),
+#     ("antiroll_rear", 55000, 20000, 120000),
+# ]
+
 VEHICLE_PARAM_SPEC = [
-    ("CD", 0.85, 0.40, 1.6),
-    ("CL", 3.5, 0.50, 7.0),
-    ("frontal_area", 1.5, 1.0, 2.2),
-    ("downforce_mult", 1.0, 0.2, 1.6),
-    ("drag_mult", 1.0, 0.6, 1.4),
-    ("mu_base", 2.4, 1.2, 3.2),
-    ("front_ride_height", 0.03, 0.0, 0.08),
-    ("rear_ride_height", 0.05, 0.0, 0.12),
-    ("antiroll_front", 60000, 20000, 120000),
-    ("antiroll_rear", 55000, 20000, 120000),
+    # Aerodynamics (realistic 2022–2025 F1 values)
+    ("CD",              0.85,   0.70,   1.10),   # total drag coefficient
+    ("CL",              3.50,   2.50,   5.50),   # downforce coefficient
+    ("frontal_area",    1.50,   1.35,   1.75),   # m^2
+    ("aero_balance",    0.45,   0.40,   0.58),   # fraction DF front axle
+
+    # scalars to allow GA flexibility
+    ("drag_mult",       1.00,   0.80,   1.20),
+    ("downforce_mult",  1.00,   0.80,   1.30),
+
+    # Engine / Hybrid (MGU-K + MGU-H)
+    ("engine_inertia",      0.25,   0.15,   0.40),       # kg*m^2
+    ("shift_rpm",           12100, 11000, 12800),        # ICE shift strategy
+
+    ("ers_max_deploy",      120_000,  80_000, 160_000),  # W (real limit 120kW)
+    ("ers_max_regen",       240_000, 180_000, 300_000),  # regen ceiling
+    ("ers_capacity",        4e6,     3e6,     5e6),      # total battery MJ
+    ("ers_efficiency",      0.85,    0.75,    0.95),
+
+    ("mguh_max_power",      80_000,  40_000, 120_000),   # MGU-H turbine gen
+    ("mguh_to_battery_eff", 0.80,    0.60,    0.95),
+    ("mguh_to_k_eff",       0.75,    0.60,    0.90),
+
+    # Gearbox & Drivetrain
+    # These should not vary too wildly—F1 gear ratios are narrow.
+    ("final_drive",         3.60,   2.80,   4.20),
+    ("drivetrain_efficiency", 0.92, 0.85,   0.95),
+
+    # Brakes (Brembo F1 data)
+    ("front_brake_force",   12_000,  10_000, 16_000),   # N
+    ("rear_brake_force",    10_000,  8_000,  14_000),   # N
+    ("brake_bias",          0.56,    0.50,   0.60),     # fraction front
+    ("brake_fade_coeff",    0.01,    0.005,  0.03),     # fade per temp unit
+    ("brake_cooling_efficiency", 0.80, 0.60, 0.95),
+
+    # Tires (loaded μ varies between 1.8–3.5)
+    ("mu_load_sensitivity",   0.0008, 0.0005, 0.0012),
+    ("rolling_resistance",    0.015,  0.010,  0.030),
+    ("optimal_slip_angle",    6.0,    4.0,    10.0),
+
+    # Suspension & Ride Heights (2022 ground-effect F1)
+    ("front_ride_height",    0.030,  0.020,  0.050),    # m
+    ("rear_ride_height",     0.050,  0.030,  0.070),
+
+    ("front_spring_rate",    95_000, 70_000, 130_000),  # N/m
+    ("rear_spring_rate",     105_000, 80_000, 150_000),
+
+    ("arb_front",            60_000, 40_000, 100_000),  # Nm/rad
+    ("arb_rear",             55_000, 35_000,  90_000),
+
+    ("heave_stiffness",      180_000, 150_000, 240_000),
+    ("roll_stiffness",       145_000, 110_000, 190_000),
 ]
 
 PARAM_NAMES = [p[0] for p in VEHICLE_PARAM_SPEC]
@@ -57,8 +112,7 @@ def evaluate_individual(ind, track, n_control, penalty_weights):
     # Build objects
     vehicle = build_vehicle(vehicle_vec)
     tb = TrajectoryBuilder()
-    traj = tb.build_trajectory(track, track.get_centerline(), ctrl_vec) # ??????????
-    # traj = control_to_trajectory(track, ctrl_vec)
+    traj = tb.build_trajectory(track, track.get_centerline(), ctrl_vec)
 
     res = evaluate_trajectory(traj, track, vehicle, penalty_weights=penalty_weights)
     fit = res.get("fitness", None)
@@ -78,8 +132,8 @@ def joint_optimize(track,
                    cxpb=0.7,
                    mutpb=0.3,
                    mut_sigma_vehicle=0.05,
-                   mut_sigma_line=0.5,
-                   penalty_weights={"offtrack": 50.0, "smoothness": 2.0},
+                   mut_sigma_line=1.5, # was 0.5
+                   penalty_weights={"offtrack": 30.0, "smoothness": 5.0},
                    seed=None, 
                    verbose=True):
 
@@ -148,7 +202,7 @@ def joint_optimize(track,
     # Init population
     population = toolbox.population(n=pop_size)
 
-    for gen in range(1, n_gens+1):
+    for gen in range(0, n_gens):
         # Evaluate
         invalid = [ind for ind in population if not ind.fitness.valid]
         fits = toolbox.map(toolbox.evaluate, invalid)
@@ -180,10 +234,11 @@ def joint_optimize(track,
 
     # Final best
     # best = min(population, key=lambda x: x.fitness.values[0])
+    best_vehicle = build_vehicle(np.array(ind[:N_VEHICLE_PARAMS]))
     print("\n===== Best Vehicle Parameters =====")
     for name, value in zip(PARAM_NAMES, best[:N_VEHICLE_PARAMS]):
         print(f"{name:20s} = {value:.6f}")
 
     print("\n===== Best Trajectory Control Offsets =====")
     print(best[N_VEHICLE_PARAMS:])
-    return best
+    return best, best_vehicle, best[N_VEHICLE_PARAMS:]
